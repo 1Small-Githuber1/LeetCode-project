@@ -1,0 +1,134 @@
+一、问题描述
+
+101. 对称二叉树：给定一个二叉树，检查它是否是镜像对称的。
+
+例如，二叉树 [1,2,2,3,4,4,3] 是对称的。
+
+    1
+   / \
+  2   2
+ / \ / \
+3  4 4  3
+ 
+但是下面这个 [1,2,2,null,3,null,3] 则不是镜像对称的:
+
+    1
+   / \
+  2   2
+   \   \
+   3    3
+
+
+二、思路分析
+分两种方法进行
+（1）递归
+如果一个树的左子树与右子树镜像对称，那么这个树是对称的。
+因此，该问题可以转化为：两个树在什么情况下互为镜像？
+
+如果同时满足下面的条件，两个树互为镜像：
+1、它们的两个根结点具有相同的值
+2、每个树的右子树都与另一个树的左子树镜像对称相等
+
+那么重点来了：左子树和右子相等，也就是说要递归的比较左子树和右子树。
+我们将根节点的左子树记做 left，右子树记做 right。比较 left 是否等于 right，不等的话直接返回就可以了。
+如果相当，比较 left 的左节点和 right 的右节点，再比较 left 的右节点和 right 的左节点
+比如看下面这两个子树(他们分别是根节点的左子树和右子树)，能观察到这么一个规律：
+左子树 2 的左孩子 == 右子树 22的右孩子
+左子树 2 的右孩子 == 右子树 2 的左孩子
+    2         2
+   / \       / \
+  3   4     4   3
+ / \ / \   / \ / \
+8  7 6  5 5  6 7  8
+
+根据上面信息可以总结出递归函数的两个条件：
+终止条件：
+1、left 和 right 不等，或者 left 和 right 都为空
+2、递归的比较 left，left 和 right.right，递归比较 left，right 和 right.left
+
+
+（2）迭代
+回想下递归的实现：
+当两个子树的根节点相等时，就比较:
+    左子树的 left 和 右子树的 right，这个比较是用递归实现的。
+    
+现在我们改用队列来实现，思路如下：
+    1、首先从队列中拿出两个节点(left 和 right)比较
+    2、将 left 的 left 节点和 right 的 right 节点放入队列
+    3、将 left 的 right 节点和 right 的 left 节点放入队列
+    
+时间复杂度是 O(n)，空间复杂度是 O(n)
+
+注意：一般递归想改为非递归的话用栈，迭代用队列，看是不是率先得到最后一层节点，是的话用栈，否则用队列
+
+
+三、代码
+
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class Solution {
+    public boolean isSymmetric(TreeNode root) {
+        //方法一：递归
+        if(root == null) {
+            return true;
+        } else {
+            return leftRight(root.left,root.right);
+        }
+        
+
+        //方法二：迭代
+        /*
+        //1、判断根节点的情况
+        if(root == null || (root.left == null && root.right == null)) {
+            return true;
+        }
+
+        //2、创建一个队列用于保存节点
+        Queue<TreeNode> queue = new LinkedList<>();
+        queue.add(root.left);
+        queue.add(root.right);
+
+        //3、循环判断
+        while(!queue.isEmpty()) {
+            //4、从队列中取出两个节点，再比较这两个节点
+            TreeNode lnode = queue.poll();
+            TreeNode rnode = queue.poll();
+            //5、如果两个节点都为空就继续循环，两者有一个为空就返回false
+            if(lnode == null && rnode == null) {
+                continue;
+            }
+            if(lnode == null || rnode == null || lnode.val != rnode.val) {
+                return false;
+            }
+            //6、将左节点的左孩子， 右节点的右孩子放入队列
+			queue.add(lnode.left);
+            queue.add(rnode.right);
+			//7、将左节点的右孩子，右节点的左孩子放入队列
+            queue.add(lnode.right);
+            queue.add(rnode.left);
+        }
+        return true;
+        */
+    }
+
+
+    //方法一
+    public boolean leftRight(TreeNode lnode,TreeNode rnode) {
+        if(lnode == null && rnode == null) {
+            return true;
+        }
+        if(lnode == null || rnode == null || lnode.val != rnode.val) {
+            return false;
+        } else {
+            return leftRight(lnode.left,rnode.right) && leftRight(lnode.right,rnode.left);
+        }
+    }
+    
+}
