@@ -1,0 +1,165 @@
+一、问题描述
+
+105. 从前序与中序遍历序列构造二叉树
+
+根据一棵树的前序遍历与中序遍历构造二叉树。
+
+注意:可以假设树中没有重复的元素。
+
+例如，给出
+
+前序遍历 preorder = [3,9,20,15,7]
+中序遍历 inorder = [9,3,15,20,7]
+返回如下的二叉树：
+
+    3
+   / \
+  9  20
+    /  \
+   15   7
+  
+二、思路分析
+（1）方法一：直接递归
+    先序遍历的顺序是根节点，左子树，右子树。中序遍历的顺序是左子树，根节点，右子树。
+所以我们只需要根据先序遍历得到根节点，然后在中序遍历中找到根节点的位置，它的左边就是左子树的节点，右边就是右子树的节点。
+生成左子树和右子树就可以递归的进行了。
+
+比如上图的例子，我们来分析一下。
+
+preorder = [3,9,20,15,7]
+inorder = [9,3,15,20,7]
+首先根据 preorder 找到根节点是 3
+    
+然后根据根节点将 inorder 分成左子树和右子树
+左子树
+inorder [9]
+右子树
+inorder [15,20,7]
+
+把相应的前序遍历的数组也加进来
+左子树
+preorder[9] 
+inorder [9]
+右子树
+preorder[20 15 7] 
+inorder [15,20,7]
+
+现在我们只需要构造左子树和右子树即可，成功把大问题化成了小问题
+然后重复上边的步骤继续划分，直到 preorder 和 inorder 都为空，返回 null 即可
+事实上，我们不需要真的把 preorder 和 inorder 切分了，只需要用分别用两个指针指向开头和结束位置即可。注意下边的两个指针指向的数组范围是包括左边界，不包括右边界。
+
+
+（2）方法二:递归 + HashMap
+    上述方法一的代码很好理解，但存在一个问题，在中序遍历中找到根节点的位置每次都得遍历中序遍历的数组去寻找，参考这里 ，我们可以用一个HashMap把中序遍历数组的每个元素的值和下标存起来，这样寻找根节点的位置就可以直接得到了。
+比如：
+    Map<Integer,Integer> indexMap = new HashMap<Integer,Integer>();
+    int n = preorder.length;
+        for(int i=0;i<n;i++) {
+            indexMap.put(inorder[i],i);
+        }
+
+（3）迭代：栈
+    这个方法没有想明白，想明白了回来补上
+
+
+三、代码
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class Solution {
+    Map<Integer,Integer> indexMap = new HashMap<Integer,Integer>();
+    
+    public TreeNode buildTree(int[] preorder, int[] inorder) {
+        //方法一：递归
+        //return buildTreeHelper(preorder, 0, preorder.length, inorder, 0, inorder.length);
+    
+        //方法二：HashMap + 递归
+        // 构造哈希映射，帮助我们快速定位根节点
+        
+        int n = preorder.length;
+        for(int i=0;i<n;i++) {
+            indexMap.put(inorder[i],i);
+        }
+        return myBuildTree(preorder,inorder,0,n-1,0,n-1);
+    }
+
+    //方法一：递归  就是速度有点慢，不及HashMap的O(1)
+    /*
+    private TreeNode buildTreeHelper(int[] preorder, int p_start, int p_end, int[] inorder,int i_start, int i_end) {
+        // preorder 为空，直接返回 null
+        if (p_start == p_end) {
+            return null;
+        }
+        int root_val = preorder[p_start];
+        TreeNode root = new TreeNode(root_val);
+        //在中序遍历中找到根节点的位置
+        int inIndex = 0;   //案例中的3
+        for (int i = i_start; i < i_end; i++) {
+            if (root_val == inorder[i]) {
+                inIndex = i;
+                break;
+            }
+        }
+        int leftNum = inIndex - i_start;
+        //递归的构造左子树
+        root.left = buildTreeHelper(preorder, p_start + 1, p_start + leftNum + 1, inorder, i_start, inIndex);
+        //递归的构造右子树
+        root.right = buildTreeHelper(preorder, p_start + leftNum + 1, p_end, inorder, inIndex + 1, i_end);
+        return root;      
+    }
+    */
+
+
+    //方法二：HashMap
+    public TreeNode myBuildTree(int[] preorder, int[] inorder, int preorder_left, 
+                                int preorder_right, int inorder_left, int inorder_right) {
+        if (preorder_left > preorder_right) {
+            return null;
+        }
+
+        // 前序遍历中的第一个节点就是根节点
+        int preorder_root = preorder_left;
+        // 在中序遍历中定位根节点
+        int inorder_root = indexMap.get(preorder[preorder_root]);
+        
+        // 先把根节点建立出来
+        TreeNode root = new TreeNode(preorder[preorder_root]);
+        // 得到左子树中的节点数目
+        int size_left_subtree = inorder_root - inorder_left;
+        // 递归地构造左子树，并连接到根节点
+        // 先序遍历中「从 左边界+1 开始的 size_left_subtree」个元素就对应了中序遍历中「从 左边界 开始到 根节点定位-1」的元素
+        root.left = myBuildTree(preorder, inorder, preorder_left + 1, preorder_left + size_left_subtree, inorder_left, inorder_root - 1);
+        // 递归地构造右子树，并连接到根节点
+        // 先序遍历中「从 左边界+1+左子树节点数目 开始到 右边界」的元素就对应了中序遍历中「从 根节点定位+1 到 右边界」的元素
+        root.right = myBuildTree(preorder, inorder, preorder_left + size_left_subtree + 1, preorder_right, inorder_root + 1, inorder_right);
+        return root;
+    }
+
+
+
+        /*
+        int Length = preorder.length;
+        if(Length == 0) {
+            return null;
+        }
+        int root_val = preorder[0];
+        TreeNode root = new TreeNode(root_val);
+        
+        for(int i =0;i<Length;i++) {
+            if(preorder[0] == inorder[i]) {
+                root.left = buildTree(Arrays.arraySub(preorder,1,i+1),Arrays.arraySub(inorder,0,i));
+                root.left = buildTree(Arrays.arraySub(preorder,i+1,Length),Arrays.arraySub(inorder,i+1,Length));
+                break;
+            }
+        }
+        return root;
+        */
+
+    
+}
