@@ -1,0 +1,137 @@
+一、问题描述：106. 从中序与后序遍历序列构造二叉树
+
+根据一棵树的中序遍历与后序遍历构造二叉树。
+
+注意:
+你可以假设树中没有重复的元素。
+
+例如，给出
+
+中序遍历 inorder = [9,3,15,20,7]
+后序遍历 postorder = [9,15,7,20,3]
+返回如下的二叉树：
+
+    3
+   / \
+  9  20
+    /  \
+   15   7
+   
+ 
+二、思路分析
+重要结论：首先要知道一个结论，前序/后序+中序序列可以唯一确定一棵二叉树，所以自然而然可以用来建树。
+
+    我们来看一下中序和后序有什么特点，中序[9,3,15,20,7] ，后序[9,15,7,20,3]；
+有如下特征：
+1、后序中右起第一位3肯定是根结点，我们可以据此找到中序中根结点的位置rootin；
+2、中序中根结点左边就是左子树结点，右边就是右子树结点，即[左子树结点，根结点，右子树结点]，我们就可以得出左子树结点个数为int left = rootin - leftin;；
+3、后序中结点分布应该是：[左子树结点，右子树结点，根结点]；
+4、根据前一步确定的左子树个数，可以确定后序中左子树结点和右子树结点的范围；
+5、如果我们要前序遍历生成二叉树的话，下一层递归应该是：
+   5.1、 左子树：root->left = pre_order(中序左子树范围，后序左子树范围，中序序列，后序序列);；
+   5.2、右子树：root->right = pre_order(中序右子树范围，后序右子树范围，中序序列，后序序列);。
+6、每一层递归都要返回当前根结点root；
+
+有了上述分析，我们很容易通过递归写出代码
+（1）方法一：递归
+    递归方法实现通过上述6个步骤可以很容易写出来，代码见下面第三节
+
+（2）方法二：递归+HashMap
+    上述方法一直接递归，每一次都反复通过while循环依次从左到右比对找 在中序遍历中后序遍历最右边的节点所在的索引位置，这样很麻烦，可以通过HashMap提前将数组的值和索引存储在<k,v>中，直接以o（1）时复更快拿到索引
+
+
+三、代码
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class Solution {
+    //方法二：构造hashMap
+    Map<Integer,Integer> indexMap = new HashMap<>();
+
+    public TreeNode buildTree(int[] inorder, int[] postorder) {
+        //方法一：递归
+        /*
+        int length = inorder.length;
+        return inorderAndPostorder(inorder, postorder, 0, length-1, 0, length-1);
+        */
+
+
+        //方法二：HashMap + 递归
+        // 构造哈希映射，帮助我们快速定位根节点
+        int length = inorder.length;
+        for(int i=0;i<length;i++) {
+            indexMap.put(inorder[i],i);
+        }
+        return inorderAndPostorder(inorder, postorder, 0, length-1, 0, length-1);
+    }
+
+
+    //方法二：递归 + hashMap
+    public TreeNode inorderAndPostorder (int[] inorder,int[] postorder,int inL,int inR,int postL,int postR) {
+        if(inL > inR) {
+            return null;
+        }
+
+        //在中序遍历数组里找，根节点所在的位置
+        int inRoot = postorder[postR];
+        int rootIndex = indexMap.get(inRoot);
+
+        //从后序遍历得到 根节点 并建立
+        TreeNode root = new TreeNode(postorder[postR]);
+        
+        //获取根节点左子节点的个数
+        int leftNums = rootIndex - inL;
+
+        //递归左子树
+        //采用分治的思想递归处理左子树
+        //左子树的inorder范围为:inL,rootIndex-1
+        //左子树的postorder范围为:postL,postL+leftNums - 1
+        root.left = inorderAndPostorder(inorder, postorder, inL, rootIndex-1, postL,postL+leftNums - 1);
+        //递归右子树
+        //右子树的inorder范围为:rootIndex+1,inR.length
+        //右子树的postorder范围为:index+1,postR-1
+        root.right = inorderAndPostorder(inorder, postorder, rootIndex+1, inR,postL+leftNums,postR-1);
+        return root;
+    }
+    
+
+
+    //方法一：递归
+    /*
+    public TreeNode inorderAndPostorder (int[] inorder,int[] postorder,int inL,int inR,int postL,int postR) {
+        if(inL > inR) {
+            return null;
+        }
+        //从后序遍历得到 根节点 并建立
+        TreeNode root = new TreeNode(postorder[postR]);
+
+        //在中序遍历数组里找，根节点所在的位置,初始位置假设是第一位
+        int rootIndex = inL;
+        //判断循环判断这个位置到底是哪个
+        while(rootIndex <= inR && inorder[rootIndex] != postorder[postR]) {
+            rootIndex++;
+        }
+        //获取根节点左子节点的个数
+        int leftNums = rootIndex - inL;
+
+        //递归左子树
+        //采用分治的思想递归处理左子树
+        //左子树的inorder范围为:inL,rootIndex-1
+        //左子树的postorder范围为:postL,postL+leftNums - 1
+        root.left = inorderAndPostorder(inorder, postorder, inL, rootIndex-1, postL,postL+leftNums - 1);
+        //递归右子树
+        //右子树的inorder范围为:rootIndex+1,inR.length
+        //右子树的postorder范围为:index+1,postR-1
+        root.right = inorderAndPostorder(inorder, postorder, rootIndex+1, inR,postL+leftNums,postR-1);
+        return root;
+    }
+    */
+    
+
+}
