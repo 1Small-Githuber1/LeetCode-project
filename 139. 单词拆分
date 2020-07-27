@@ -1,0 +1,99 @@
+一、问题描述：139. 单词拆分
+
+给定一个非空字符串 s 和一个包含非空单词列表的字典 wordDict，判定 s 是否可以被空格拆分为一个或多个在字典中出现的单词。
+
+说明：
+拆分时可以重复使用字典中的单词。
+你可以假设字典中没有重复的单词。
+
+
+示例 1：
+输入: s = "leetcode", wordDict = ["leet", "code"]
+输出: true
+解释: 返回 true 因为 "leetcode" 可以被拆分成 "leet code"。
+
+
+示例 2：
+输入: s = "applepenapple", wordDict = ["apple", "pen"]
+输出: true
+解释: 返回 true 因为 "applepenapple" 可以被拆分成 "apple pen apple"。
+     注意你可以重复使用字典中的单词。
+     
+     
+示例 3：
+输入: s = "catsandog", wordDict = ["cats", "dog", "sand", "and", "cat"]
+输出: false
+
+
+二、思路分析
+（1）分解问题
+    题目说：s 串能否分解为单词表里的单词，即：前 s.length 个字符的 s 串能否分解为单词表里的单词
+    将大问题分解为子问题：前 i 个字符的子串能否分解成单词表里的单词 + 剩余子串是否为单词表中的单个单词
+
+（2）状态转移方程
+    用指针 j 去划分这两部分
+    [0, i] 区间子串的 dp[i+1] 是否为真，取决于两部分：
+        它的前缀子串 [0, j-1] 的 dp[j]是否为真
+        剩余子串 [j,i] 是否是一个合格的单词
+
+（3）需要注意的地方
+    dp[0] = true，长度为 0 的子串是由单词表的单词组成的。
+    但这纯粹是为了让边界情况也能满足状态转移方程，dp[i+1] 全然取决于 [0,i]子串是否是单词表的单词
+    所以我们让 dp[0] = true
+
+
+三、代码
+
+class Solution {
+    public boolean wordBreak(String s, List<String> wordDict) {
+        // 动态规划：可以类比于0-1背包问题    11ms
+
+        //将wordDict 设置成一个 HashSet有序集合
+        Set<String> wordDictSet = new HashSet(wordDict);
+        int len = s.length();
+        //为什么 布尔型数组大小是len + 1，是因为后面的j把前i个元素(0,i-1)分成了2个，所以加起来就比总元素大小大1
+        boolean[] dp = new boolean[len + 1];
+        dp[0] = true;    //  dp[i]表示字符串s的前i个字符能否拆分成wordDict，默认长度为 0 的子串是由单词表的单词组成的
+        for (int i = 1; i <= len; i++) {  // i从1开始到len
+            for (int j = 0; j < i; j++) {    // j从0和i重合，向左，到开端
+                //s.substring(j, i)是检测是否是单词表中的单词，且左侧子串[0,j-1]的dp[j]为真
+                if (dp[j] && wordDictSet.contains(s.substring(j, i))) {  // 共同决定了当前长度为i的子串的dp项为真
+                    dp[i] = true;  
+                    break;     // i长度的子串已经可以break成单词表的单词了，不需要j继续划分子串
+                }
+            }
+        }
+        return dp[len];
+
+
+
+        /* 10ms
+        Set<String> wordDictSet = new HashSet<>(wordDict);
+
+        int len = s.length();
+        boolean[] dp = new boolean[len + 1];
+        dp[0] = true;
+
+        for(int i = 1;i<=len;i++) {
+            for(int j=0;j<i;j++) {
+                if(dp[j] && wordDictSet.contains(s.substring(j,i))) {
+                    dp[i] = true;
+                    break;
+                }
+            }
+        }
+        return dp[len];
+        */
+        
+    }
+}
+
+
+四、执行结果
+
+执行结果：通过 
+执行用时：10 ms, 在所有 Java 提交中击败了58.44%的用户
+内存消耗：40.2 MB, 在所有 Java 提交中击败了8.00%的用户
+
+
+
